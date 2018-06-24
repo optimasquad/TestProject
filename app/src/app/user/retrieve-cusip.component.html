@@ -1,0 +1,43 @@
+<div class="col-md-6">
+  <h2 class="text-center">Search</h2>
+<form>
+ <div class="form-group">
+    <label for="protfolio">Portfolio Group:</label>
+    <input  [(ngModel)] = "cusp.portfolio"  placeholder="Portfolio Group"  name="portfolio"
+     class="form-control"  id="portfolio">
+  </div>
+
+  <div class="form-group">
+    <label for="Date">Date Range:</label>
+    <input [(ngModel)] = "cusp.date"  placeholder="Date"  name="date"  class="form-control"  id="date">
+  </div>
+
+
+  <div class="form-group">
+    <label for="Date">Open Date:</label>
+
+    <input type="date"  [(ngModel)]="cusp.openDate"  name="openDate"  class="form-control"  id="openDate">
+   <!-- <tr>
+                  
+                    <td>
+ <datepicker
+                         [(ngModel)]="cusp.openDate"
+                          [showWeeks]="true"
+                          [minDate]="minDate"
+                          [dateDisabled]="disabledDate"
+                          [onlyCurrentMonth]=true>
+                        
+     </datepicker>
+                    </td></tr>-->
+  </div>
+  <button class="btn btn-success" (click)="retrieveAllCusip(cusp)">Search</button>
+</form>
+</div>
+
+
+<div>
+  <tr *ngFor="let cusp of cusps">
+    <td class="hidden"></td>
+    <td>{{cusp.id}}</td>
+  </tr>
+</div>
