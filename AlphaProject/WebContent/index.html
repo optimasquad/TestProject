@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+	<p>Click the button to wait 3 seconds, then alert "Hello".</p>
+	<p>After clicking away the alert box, an new alert box will appear
+		in 3 seconds. This goes on forever...</p>
+
+	<button onclick="myFunction()">Try it</button>
+
+	<script>
+		var myVar;
+		var lastCheckFinished = true;
+		var jobFinished = false;
+		function myFunction() {
+			myVar = setInterval(alertFunc, 15 * 1000);
+			console.log("Hello" + myVar);
+			setTimeout(myVar);
+		}
+		function alertFunc() {
+			if (!lastCheckFinished) {
+				return;
+			}
+			lastCheckFinished = false;
+			alert("Hello Jatin Mahajan!");
+			jobFinished = true;
+		}
+
+		setTimeout(function() {
+			clearInterval(myVar);
+			if (!jobFinished) {
+				console.log("setTimeout is called" + myVar
+						+ "and setTimeout value " + jobFinished);
+				clearInterval(myVar);
+			}
+		}, 30 * 1000);
+	</script>
+
+</body>
+</html>
