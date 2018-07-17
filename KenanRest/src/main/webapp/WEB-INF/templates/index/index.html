@@ -1,0 +1,33 @@
+<!doctype html>
+<!--[if IE]><![endif]-->
+<!--[if lt IE 7 ]>
+<html lang="en" class="ie6">    <![endif]-->
+<!--[if IE 7 ]>
+<html lang="en" class="ie7">    <![endif]-->
+<!--[if IE 8 ]>
+<html lang="en" class="ie8">    <![endif]-->
+<!--[if IE 9 ]>
+<html lang="en" class="ie9">    <![endif]-->
+<!--[if (gt IE 9)|!(IE)]><!-->
+
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+	xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="x-ua-compatible" content="ie=edge"></meta>
+<meta name="viewport" content="width=device-width, initial-scale=1"></meta>
+<title>Kenan Rest - Home</title>
+</head>
+<body>
+	<ul>
+		<li>
+			<h1>Country Name is</h1>
+			<h1 th:text="${COUNTRY}"></h1>
+		</li>
+		<li>
+			<h1>City Name is</h1>
+			<h1 th:text="${CITY}"></h1>
+		</li>
+	</ul>
+</body>
+</html>
