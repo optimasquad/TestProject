@@ -1,0 +1,72 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:th="http://www.thymeleaf.org">
+
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="x-ua-compatible" content="ie=edge" />
+<title>Marriage : Marriage Making</title>
+<!-- <meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" /> -->
+<head th:remove="tag" th:include="common/homeincludes :: includes" />
+<head th:remove="tag" th:include="common/homeincludes :: scriptinclude" />
+<link th:href="@{/resources/css/animate-custom.css}" rel="stylesheet"
+	type="text/css"></link>
+<link th:href="@{/resources/css/register.css}" rel="stylesheet"
+	type="text/css"></link>
+	<script th:src="@{/resources/js/jquery-1.10.2.min.js}"></script>
+
+<script th:inline="javascript">
+	//alert("Hello");
+	$("document").ready(function() {
+
+		console.log('Hello World');
+		alert('The script is called in partial.html');
+
+	$("#btn").click(function() {
+			alert("The script is called in partial.html");
+			//retrieving the form values
+			
+			var username=$("#username").val();
+			
+			var emailAddress=$("#emailAddress").val();
+			
+			alert("The username is"+username+"and emailAddress is"+emailAddress);
+			
+			console.log("The value of username"+username+"and emailAddress"+emailAddress);	
+			
+			$.ajax({
+					type : "post",
+					url : "/register",
+					success : function(callback) {
+						alert("");
+						$(this).html("Success!");
+					},
+					error : function() {
+						$(this).html("Error!");
+					}
+				});
+			
+		}); 
+
+
+	});
+</script>
+</head>
+
+<body>
+
+	<!-- Add your site or application content here -->
+	<div th:include="common/header :: header"></div>
+	<div th:include="register/partials ::register"></div>
+
+	<!-- <div id="footer_align"> -->
+	<div th:include="common/footer :: footer"></div>
+
+	<!-- </div> -->
+
+</body>
+</html>
+
+
+
+

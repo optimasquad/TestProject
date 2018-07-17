@@ -1,0 +1,97 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:th="http://www.thymeleaf.org">
+ 
+<body>
+
+	<div th:fragment="register">
+		<div class="main-content">
+
+			<!-- You only need this form and the form-register.css -->
+
+			<form class="form-register" th:action="@{/register}"
+				th:object="${userRegistrationBean}" method="post">
+
+				<div class="form-register-with-email">
+
+					<div class="form-white-background">
+
+						<div class="form-title-row">
+							<h1 style="text-align: center">Create an account</h1>
+						</div>
+
+						<div class="form-row">
+							<label for="Username" style="padding-right: 25px">Username
+								*</label> <input type="text" id ="username" name="userName" th:field="*{userName}"
+								required="required"></input> <label
+								th:if="${#fields.hasErrors('userName')}" th:errors="*{userName}">userName
+								Error</label>
+						</div>
+
+						<div class="form-row">
+							<label for="emailAddress" style="padding-right: 25px">Email
+								*</label> <input type="email" id="emailAddress" name="email" th:field="*{emailAddress}"
+								required="required"
+								pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{1,63}$"></input>
+							<label th:if="${#fields.hasErrors('emailAddress')}"
+								th:errors="*{emailAddress}">Email Error</label>
+						</div>
+
+						<div class="form-row">
+							<label for="password">Password *</label> <input type="password"
+								name="password" th:field="*{password}" required="required"
+								pattern=".{6,12}"
+								title="Password should be between 6 - 12 characters"></input> <label
+								th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Password
+								Error</label>
+						</div>
+
+						<div class="form-row">
+							<label for="phoneNumber">Phone Number (format:
+								xxx-xxx-xxxx)*</label> <input type="text" th:field="*{phoneNumber}"
+								required="required" maxlength="10" pattern="^[789]\d{9}$"
+								title="Enter your mobile number"
+								onkeypress='return isNumberKey(event)'></input> <label
+								th:if="${#fields.hasErrors('phoneNumber')}"
+								th:errors="*{phoneNumber}">Phone Number Error</label>
+						</div>
+
+						<div class="form-row">
+							<label class="form-checkbox"> <input type="checkbox"
+								name="checkbox"></input> <span>I agree to the <a href="#">terms
+										and conditions</a></span>
+							</label>
+						</div>
+
+						<div class="form-row">
+							<!-- <button type="submit" onclick="register">Register</button> -->
+						<button  id="btn" type="submit">Register</button>
+
+						</div>
+
+					</div>
+					<div id="Login" style="height: 100px">
+						<a href="#" class="form-log-in-with-existing" style="height: 50px">Already
+							have an account? Login here &rarr;</a>
+					</div>
+
+				</div>
+
+				<div class="form-sign-in-with-social">
+
+					<div class="form-row form-title-row">
+						<span class="form-title">Sign in with</span>
+					</div>
+
+					<a href="#" class="form-google-button">Google</a> <a href="#"
+						class="form-facebook-button">Facebook</a> <a href="#"
+						class="form-twitter-button">Twitter</a>
+
+				</div>
+
+			</form>
+
+		</div>
+
+	</div>
+</body>
+</html>

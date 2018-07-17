@@ -1,0 +1,38 @@
+<!--A Design by Jatin Mahajan
+Author: Jatin Mahajan
+Author URL: soon to be updated
+-->
+<!doctype html>
+<!--[if IE]><![endif]-->
+<!--[if lt IE 7 ]R> <html lang="en" class="ie6">    <![endif]-->
+<!--[if IE 7 ]>    <html lang="en" class="ie7">    <![endif]-->
+<!--[if IE 8 ]>    <html lang="en" class="ie8">    <![endif]-->
+<!--[if IE 9 ]>    <html lang="en" class="ie9">    <![endif]-->
+<!--[if (gt IE 9)|!(IE)]><!-->
+
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+	xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="x-ua-compatible" content="ie=edge" />
+<title>Marriage : Marriage Making</title>
+<!-- <meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" /> -->
+<head th:remove="tag" th:include="common/homeincludes :: includes" />
+<head th:remove="tag" th:include="common/homeincludes :: scriptinclude" />
+</head>
+
+<body>
+	<!--[if lt IE 8]>
+            <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+	<!-- Add your site or application content here -->
+	<div th:include="common/header :: header"></div>
+	<div th:include="home/partials :: banner"></div>
+	<div th:include="home/partials :: special"></div>
+	<div th:include="home/partials :: events"></div>
+	<div th:include="home/partials :: timeline"></div>
+	<div th:include="home/partials :: contact"></div>
+	<div th:include="common/footer :: footer"></div>
+</body>
+</html>
