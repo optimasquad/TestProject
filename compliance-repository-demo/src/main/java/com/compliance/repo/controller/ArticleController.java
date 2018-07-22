@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.compliance.repo.entity.Article;
-import com.compliance.repo.service.IArticleService;
+import com.compliance.write.repo.service.IArticleService;
 
 @Controller
 @RequestMapping("user")

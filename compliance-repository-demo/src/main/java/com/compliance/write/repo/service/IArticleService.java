@@ -1,4 +1,4 @@
-package com.compliance.repo.service;
+package com.compliance.write.repo.service;
 
 import java.util.List;
 

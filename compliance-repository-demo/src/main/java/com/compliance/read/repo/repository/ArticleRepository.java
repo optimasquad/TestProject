@@ -1,4 +1,4 @@
-package com.compliance.repo.repository;
+package com.compliance.read.repo.repository;
 
 import java.util.List;
 
