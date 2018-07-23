@@ -2,10 +2,12 @@ package com.compliance.write.repo.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.compliance.read.repo.exception.ResourceNotFoundException;
 import com.compliance.read.repo.repository.ArticleRepository;
 import com.compliance.repo.entity.Article;
 
@@ -16,8 +18,11 @@ public class ArticleService implements IArticleService {
 
 	@Override
 	public Article getArticleById(long articleId) {
-		Article obj = articleRepository.findById(articleId).get();
-		return obj;
+		Optional<Article> obj = articleRepository.findById(articleId);
+		if (!obj.isPresent()) {
+			throw new ResourceNotFoundException(articleId, "article not found");
+		}
+		return obj.get();
 	}
 
 	@Override

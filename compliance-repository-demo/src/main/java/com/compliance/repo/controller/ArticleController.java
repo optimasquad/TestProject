@@ -2,6 +2,8 @@ package com.compliance.repo.controller;
 
 import java.util.List;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -38,7 +40,7 @@ public class ArticleController {
 	}
 
 	@PostMapping("article")
-	public ResponseEntity<Void> addArticle(@RequestBody Article article, UriComponentsBuilder builder) {
+	public ResponseEntity<Void> addArticle(@Valid @RequestBody Article article, UriComponentsBuilder builder) {
 		boolean flag = articleService.addArticle(article);
 		if (flag == false) {
 			return new ResponseEntity<Void>(HttpStatus.CONFLICT);

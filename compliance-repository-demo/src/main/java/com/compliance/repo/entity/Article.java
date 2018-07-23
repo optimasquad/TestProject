@@ -8,6 +8,10 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+
+import com.compliance.read.repo.validator.Title;
 
 @Entity
 @Table(name = "articles")
@@ -17,9 +21,14 @@ public class Article implements Serializable {
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "article_id")
 	private long articleId;
+	
 	@Column(name = "title")
+	@Title(message = "Invalid title.")
 	private String title;
+
 	@Column(name = "category")
+	@NotNull
+	@Min(value = 18, message = "Please provide valid category")
 	private String category;
 
 	public long getArticleId() {
