@@ -10,10 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
@@ -23,13 +20,16 @@ import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+
+import com.compliance.read.repo.repository.AbstractReadRepoImpl;
+import com.compliance.write.repo.service.ArticleService;
+import com.compliance.write.repo.service.IArticleService;
+import com.compliance.write.repo.service.IPartyService;
+import com.compliance.write.repo.service.PartyService;
 
 @Configuration
 @PropertySource({ "classpath:read-db.properties" })
-@ComponentScan(basePackages = { "com.compliance" }, excludeFilters = {
-		@Filter(type = FilterType.ANNOTATION, value = EnableWebMvc.class) })
-@EnableJpaRepositories(basePackages = "com.compliance.read.repo.repository", entityManagerFactoryRef = "readEntityManagerFactory", transactionManagerRef = "readTransactionManager")
+@EnableJpaRepositories(basePackages = "com.compliance.repo.repository", repositoryBaseClass = AbstractReadRepoImpl.class, entityManagerFactoryRef = "readEntityManagerFactory", transactionManagerRef = "readTransactionManager")
 @EnableTransactionManagement
 public class ReadConfig {
 
@@ -65,6 +65,16 @@ public class ReadConfig {
 	public PlatformTransactionManager transactionManager(
 			@Qualifier("readEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
 		return new JpaTransactionManager(entityManagerFactory);
+	}
+
+	@Bean
+	public IArticleService articleService() {
+		return new ArticleService();
+	}
+
+	@Bean
+	public IPartyService partyService() {
+		return new PartyService();
 	}
 
 }

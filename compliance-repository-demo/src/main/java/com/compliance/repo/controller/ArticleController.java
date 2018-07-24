@@ -20,12 +20,17 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import com.compliance.repo.entity.Article;
 import com.compliance.write.repo.service.IArticleService;
+import com.compliance.write.repo.service.IPartyService;
 
 @Controller
 @RequestMapping("user")
 public class ArticleController {
+	
 	@Autowired
 	private IArticleService articleService;
+
+	@Autowired
+	private IPartyService partyService;
 
 	@GetMapping("article/{id}")
 	public ResponseEntity<Article> getArticleById(@PathVariable("id") Integer id) {
@@ -61,4 +66,11 @@ public class ArticleController {
 		articleService.deleteArticle(id);
 		return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
 	}
+
+	@GetMapping(value = "party/{id}")
+	public ResponseEntity<Void> deletePartyn(@PathVariable long id) {
+		partyService.Partydelete();
+		return new ResponseEntity<Void>(HttpStatus.OK);
+	}
+
 }

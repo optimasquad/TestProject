@@ -10,10 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -22,16 +19,19 @@ import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+
+import com.compliance.write.repo.repository.AbstractWriteRepoImpl;
+import com.compliance.write.repo.service.ArticleService;
+import com.compliance.write.repo.service.IArticleService;
+import com.compliance.write.repo.service.IPartyService;
+import com.compliance.write.repo.service.PartyService;
 
 @Configuration
 @PropertySource({ "classpath:write-db.properties" })
-@ComponentScan(basePackages = { "com.compliance" }, excludeFilters = {
-		@Filter(type = FilterType.ANNOTATION, value = EnableWebMvc.class) })
-@EnableJpaRepositories(basePackages = "com.compliance.write.repo.repository", entityManagerFactoryRef = "writeEntityManagerFactory", transactionManagerRef = "writeTransactionManager")
+@EnableJpaRepositories(basePackages = "com.compliance.repo.repository", repositoryBaseClass = AbstractWriteRepoImpl.class, entityManagerFactoryRef = "writeEntityManagerFactory", transactionManagerRef = "writeTransactionManager")
 @EnableTransactionManagement
 public class WriteConfig {
-	
+
 	@Autowired
 	private Environment env;
 
@@ -61,6 +61,16 @@ public class WriteConfig {
 	public PlatformTransactionManager transactionManager(
 			@Qualifier("writeEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
 		return new JpaTransactionManager(entityManagerFactory);
+	}
+	
+	@Bean
+	public IArticleService articleService() {
+		return new ArticleService();
+	}
+
+	@Bean
+	public IPartyService partyService() {
+		return new PartyService();
 	}
 
 }

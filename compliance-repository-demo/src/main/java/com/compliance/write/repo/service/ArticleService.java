@@ -8,13 +8,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.compliance.read.repo.exception.ResourceNotFoundException;
-import com.compliance.read.repo.repository.ArticleRepository;
 import com.compliance.repo.entity.Article;
+import com.compliance.repo.repository.ArticleDetailsRepository;
+import com.compliance.repo.repository.ArticleRepository;
 
 @Service
 public class ArticleService implements IArticleService {
 	@Autowired
 	private ArticleRepository articleRepository;
+
+	@Autowired
+	ArticleDetailsRepository articleDetailsRepository;
 
 	@Override
 	public Article getArticleById(long articleId) {
@@ -34,7 +38,7 @@ public class ArticleService implements IArticleService {
 
 	@Override
 	public synchronized boolean addArticle(Article article) {
-		List<Article> list = articleRepository.findByTitleAndCategory(article.getTitle(), article.getCategory());
+		List<Article> list = articleDetailsRepository.findByTitleAndCategory(article.getTitle(), article.getCategory());
 		if (list.size() > 0) {
 			return false;
 		} else {
