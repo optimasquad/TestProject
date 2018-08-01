@@ -1,5 +1,7 @@
 package com.compliance.repo;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,6 +24,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import com.compliance.read.repo.repository.AbstractReadRepoImpl;
+import com.compliance.read.repo.validator.AccountServiceSingleton;
 import com.compliance.write.repo.service.ArticleService;
 import com.compliance.write.repo.service.IArticleService;
 import com.compliance.write.repo.service.IPartyService;
@@ -75,6 +78,18 @@ public class ReadConfig {
 	@Bean
 	public IPartyService partyService() {
 		return new PartyService();
+	}
+
+	@Bean
+	public AccountServiceSingleton accountServiceSingleton() throws NoSuchMethodException, SecurityException,
+			InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+
+		Constructor cxor = AccountServiceSingleton.class.getDeclaredConstructor();
+		cxor.setAccessible(true);
+		AccountServiceSingleton accountServiceSingleton = (AccountServiceSingleton) cxor.newInstance();
+		accountServiceSingleton.Message();
+		return accountServiceSingleton;
+
 	}
 
 }
