@@ -1,0 +1,499 @@
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Map;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.X509HostnameVerifier;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
+import org.apache.http.util.EntityUtils;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.amdocs.api.framework.base.FXConfiguration;
+import com.amdocs.api.framework.base.Scope;
+import com.amdocs.api.framework.base.ScopeType;
+import com.amdocs.api.framework.business.SystemParameterUtil;
+import com.amdocs.api.framework.cache.Cache;
+import com.amdocs.api.framework.cache.CacheManagerFactory;
+import com.amdocs.api.framework.client.UserContext;
+import com.amdocs.api.framework.errors.ApiException;
+import com.amdocs.api.framework.log.LogUtil;
+import com.amdocs.api.framework.messages.MessageData;
+import com.amdocs.api.framework.messages.MessageKeyGeneral;
+import com.amdocs.api.framework.reload.Reloadable;
+import com.amdocs.api.ordering.utils.AddSubscriberExternalIdRequest;
+import com.amdocs.api.ordering.utils.ParsingFXObjects;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+@Scope (ScopeType.SINGLETON)
+public class ConversedCommonInterface implements Reloadable {
+
+	final protected static String OAUTH_CONFIG_CACHE = "OAUTHCONFIG_CACHE";
+	/**
+	 * Below is the cache instance for the Oauth
+	 */
+	protected static Cache cacheOauth = null;
+	protected static final String SERVICEINTERNALIDRESETS="serviceInternalIdResets";
+	protected static final String SERVICEINTERNALID="serviceInternalId";
+
+	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+	public static ConversedOauthResponse getToken() throws IOException, ApiException {
+
+		StringBuffer url = null;
+		Integer tenantId = UserContext.getInstance().getTenantId();
+		String cacheKey = tenantId + ":URL";
+		ConversedOauthResponse conversedOauthResponse = null;
+		HttpURLConnection connection = null;
+		String protocolUsed = null;
+		String body = null;
+		StringBuffer contentType = null;
+		
+		if (cacheOauth.get(cacheKey) != null) {
+			url = (StringBuffer) cacheOauth.get(cacheKey);
+			protocolUsed = SystemParameterUtil.getString("idm", "protocol");
+		} else {
+
+			protocolUsed = SystemParameterUtil.getString("idm", "protocol");
+			url = new StringBuffer(protocolUsed).append("://")
+						.append(SystemParameterUtil.getString("idm", "host")).append(":")
+						.append(SystemParameterUtil.getString("idm", "port")).append("/auth/realms/")
+						.append(SystemParameterUtil.getString("idm", "realm"))
+						.append("/protocol/openid-connect/token");
+				if (url != null) {
+
+					cacheOauth.put(cacheKey, url);
+				}
+		}
+		
+		
+		body = "username=" + SystemParameterUtil.getString("idm", "username") + "&password=" + SystemParameterUtil.getString("idm", "password") + "&grant_type=password";
+		
+		try {
+			
+			URL targetUrl = new URL(url.toString());
+
+ 			if(protocolUsed != null && protocolUsed.equals("https"))
+			{
+	            HttpsURLConnection https = (HttpsURLConnection) targetUrl.openConnection();
+	            //bypass certificate validations
+	            HostnameVerifier trustAllHosts = new HostnameVerifier() 
+                {
+	            	@Override
+	            	public boolean verify( String hostname, SSLSession session) { return true; }
+
+				
+                } ;
+                
+                https.setHostnameVerifier(trustAllHosts);
+	            TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager()
+	            {
+	            	@Override
+	            	public java.security.cert.X509Certificate[] getAcceptedIssuers()
+	                {
+	                    return new java.security.cert.X509Certificate[] {};
+	                }
+	            	@Override
+	            	public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException
+	                {
+	                }
+	            	@Override
+	                public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException
+	                {
+	                }
+	            } };
+	            SSLContext sc = SSLContext.getInstance( "SSL"); 
+                sc.init( null, trustAllCerts, null);
+	            https.setSSLSocketFactory(sc.getSocketFactory());
+	            
+				connection = https;
+			}
+			else
+			{
+				connection = (HttpURLConnection) targetUrl.openConnection();
+			}
+			connection.setRequestMethod("POST");
+			contentType = new StringBuffer(SystemParameterUtil.getString("idm", "content-type1"))
+					.append(SystemParameterUtil.getString("idm", "content-type2"));
+			connection.setRequestProperty("Content-Type", contentType.toString());
+			//connection.setRequestProperty("Content-Length", Integer.toString(body.getBytes().length));
+			connection.setRequestProperty("Authorization", SystemParameterUtil.getString("idm", "basic"));	
+			connection.setUseCaches(false);
+			connection.setDoOutput(true);
+			
+			if (LogUtil.isDebugEnabled(ConversedCommonInterface.class)) {
+				LogUtil.debug(ConversedCommonInterface.class, "url", "getToken URL: " +  url.toString());
+				LogUtil.debug(ConversedCommonInterface.class, "content-type", "getToken: " +  contentType);
+				LogUtil.debug(ConversedCommonInterface.class, "tenantId", "getToken tenantId: " +  UserContext.getInstance().getTenantId().toString());
+				LogUtil.debug(ConversedCommonInterface.class, "Authorization", "getToken: Authorization: " +  SystemParameterUtil.getString("idm", "basic"));
+				
+			}
+			// Send request
+			DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+			wr.writeBytes(body);
+			wr.close();
+
+			// Get Response
+			InputStream is = connection.getInputStream();
+			BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+
+			StringBuilder response = new StringBuilder(); 
+			String line;
+			while ((line = rd.readLine()) != null) {
+				response.append(line);
+				response.append('\r');
+			}
+			rd.close();
+			JsonParser parser = new JsonParser();
+			JsonObject jsonResponse = parser.parse(response.toString()).getAsJsonObject();
+			conversedOauthResponse = new ConversedOauthResponse();
+			conversedOauthResponse.setResponseTimeStamp(LocalDateTime.now());
+			conversedOauthResponse.setToken("bearer "+jsonResponse.get("access_token").toString().replaceAll("^\"|\"$", ""));
+			conversedOauthResponse.setRefresh_expires_in(jsonResponse.get("refresh_expires_in").toString()); //refresh_expires_in
+			return conversedOauthResponse;
+			
+		} catch (Exception e) {
+			LogUtil.error(ConversedCommonInterface.class, "getTokenException", MessageKeyGeneral.ESB_API_CALL_ERROR +  new String(e.getMessage()));
+			throw new ApiException(
+					new MessageData(MessageKeyGeneral.ESB_API_CALL_ERROR, new String(e.getMessage())));
+		} finally {
+			if (connection != null) {
+				connection.disconnect();
+			}
+		}
+		
+	}
+
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public static Object callESBInterface(Map<String, Object> esbAPIParams) throws ApiException {
+
+		Object resultObj = null;
+		if (cacheOauth == null) {
+			cacheOauth = CacheManagerFactory.getCacheManager().getCache(OAUTH_CONFIG_CACHE);
+
+		}
+
+		if (null != cacheOauth) {
+			Integer tenantId = UserContext.getInstance().getTenantId();
+
+			if (tenantId == null || tenantId == -1) {
+				LogUtil.debug(ConversedCommonInterface.class, "getCacheKey",
+						"Tenant Id in current context:" + tenantId);
+				throw new ApiException(
+						new MessageData(MessageKeyGeneral.MissingRequiredKeyValue, new String("tenantId")));
+			} else {
+				
+				String cacheKey = tenantId.toString() + ":" + "OAUTH";
+				ConversedOauthResponse conversedOauthCacheResponse = getOAUTHCacheKey(cacheKey, cacheOauth);
+
+				if (null == conversedOauthCacheResponse) {
+
+					try {
+						conversedOauthCacheResponse = getToken();
+						if (conversedOauthCacheResponse != null) {
+
+							cacheOauth.put(cacheKey, conversedOauthCacheResponse);
+
+						}
+
+					} catch (IOException e) {
+						throw new ApiException(new MessageData(MessageKeyGeneral.ESB_API_CALL_ERROR,
+								 SystemParameterUtil.getString("idm", "baseurl")));
+					}
+
+				}
+
+				try {
+					resultObj = callESBApi(conversedOauthCacheResponse, esbAPIParams);
+				} catch (IOException e) {
+					throw new ApiException(new MessageData(MessageKeyGeneral.ESB_API_CALL_ERROR,
+							 SystemParameterUtil.getString("idm", "baseurl")));
+				}
+			}
+
+		} else {
+			throw new ApiException(
+					new MessageData(MessageKeyGeneral.MissingRequiredKeyValue, new String("OAUTH Cache Excption")));
+		}
+		return resultObj;
+
+	}
+
+	/*
+	 * getOAUTHCacheKey : retrieves the cached KEY
+	 */
+	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+	public static ConversedOauthResponse getOAUTHCacheKey(String cacheKey, Cache cacheOauth) throws ApiException {
+		ConversedOauthResponse conversedOauthResponse = null;
+		if (null != cacheOauth) {
+
+			conversedOauthResponse = (ConversedOauthResponse) cacheOauth.get(cacheKey);
+			String bufferTime = FXConfiguration.getConfiguration().getString("cache.buffer.time");
+
+			if (conversedOauthResponse != null) {
+				LocalDateTime currentDateTime = LocalDateTime.now();
+				if (ChronoUnit.SECONDS.between(conversedOauthResponse.getResponseTimeStamp(),
+						currentDateTime) >= (Long.valueOf(conversedOauthResponse.getRefresh_expires_in()).longValue()
+								- Long.valueOf(bufferTime).longValue())) { // =>expire-buffer
+					cacheOauth.remove(cacheKey);
+					return null;
+				}
+			}
+
+		} else {
+			throw new ApiException(
+					new MessageData(MessageKeyGeneral.MissingRequiredKeyValue, new String("OAUTH Cache Excption")));
+		}
+
+		return conversedOauthResponse;
+	}
+
+	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+	public static Object callESBApi(ConversedOauthResponse conversedOauthResponse, Map<String, Object> esbAPIParams)
+			throws IOException, ApiException {
+
+		String apiName = null;
+		Object inputObject = null;
+
+		for (String key : esbAPIParams.keySet()) {
+			apiName = key;
+			inputObject = esbAPIParams.get(key);
+
+		}
+
+		if (apiName != null && apiName.endsWith("Get")) {
+
+			return getApiCall(conversedOauthResponse, inputObject, apiName);
+
+		} else if (apiName != null && (apiName.equalsIgnoreCase("ServiceSuspend") || 
+				apiName.equalsIgnoreCase("ServiceResume") || apiName.equalsIgnoreCase("ServiceCreate") || apiName.equalsIgnoreCase("ServiceChange"))) {
+
+			return postApiCall(conversedOauthResponse, inputObject, apiName);
+		}
+
+		return null;
+
+	}
+
+	/*
+	 * getApiCall - handles all the request of the type Get
+	 */
+	private static Object getApiCall(ConversedOauthResponse conversedOauthResponse, Object objectInput,
+			String serviceName) throws IOException, ApiException {
+
+		HttpGet getUrl = null;
+		HttpResponse response = null;
+		int statusCode;
+
+		int contimeOut = Integer.parseInt(FXConfiguration.getConfiguration().getString("esb.rest.timeout"));
+		final HttpParams httpParams = new BasicHttpParams();
+		HttpConnectionParams.setConnectionTimeout(httpParams, contimeOut);
+		HttpClient httpClientObj = new DefaultHttpClient(httpParams);
+		HttpClient httpClient = wrapHttpClient(httpClientObj);
+		StringBuffer url = new StringBuffer(FXConfiguration.getConfiguration().getString("esb.rest.base.url"))
+				.append(":")
+				.append(FXConfiguration.getConfiguration().getString(serviceName));
+		getUrl = new HttpGet(url.toString());
+		getUrl.addHeader("content-type", FXConfiguration.getConfiguration().getString("esb.apicall.contentType"));
+		getUrl.addHeader("tenantId", UserContext.getInstance().getTenantId().toString());
+		getUrl.addHeader("Authorization",conversedOauthResponse.getToken());
+		response = httpClient.execute(getUrl);
+		statusCode = response.getStatusLine().getStatusCode();
+
+		if (statusCode != HttpStatus.SC_OK) {
+			LogUtil.error(ConversedCommonInterface.class, "getApiCall", MessageKeyGeneral.INVALID_SERVER_STATUS_CODE +  String.valueOf(statusCode));
+			throw new ApiException(new MessageData(MessageKeyGeneral.INVALID_SERVER_STATUS_CODE,
+					new String(String.valueOf(statusCode))));
+
+		} else {
+
+			HttpEntity entity = response.getEntity();
+			Gson gson = new GsonBuilder().create();
+			return gson.fromJson(EntityUtils.toString(entity), objectInput.getClass());
+		}
+
+	}
+
+	/*
+	 * postApiCall - handles all the request of the type post
+	 */
+	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+	public static Object postApiCall(ConversedOauthResponse conversedOauthResponse, Object objectInput,
+			String serviceName) throws IOException, ApiException {
+
+		HttpPost postUrl = null;
+		HttpResponse response;
+		ParsingFXObjects parsingFxObjects = new ParsingFXObjects();
+		int statusCode;
+
+		try {
+
+
+			final HttpParams httpParams = new BasicHttpParams();
+			HttpConnectionParams.setConnectionTimeout(httpParams,
+					Integer.parseInt(FXConfiguration.getConfiguration().getString("esb.rest.timeout")));
+			HttpClient httpClientObj = new DefaultHttpClient(httpParams);
+			HttpClient httpClient = wrapHttpClient(httpClientObj);
+			
+			StringBuffer url = new StringBuffer(FXConfiguration.getConfiguration().getString("esb.rest.base.url"))
+					.append(":")
+					.append(FXConfiguration.getConfiguration().getString(serviceName));
+			
+			if(serviceName.equals("ServiceChange")) {
+				
+				if(objectInput instanceof AddSubscriberExternalIdRequest) {
+					AddSubscriberExternalIdRequest addSubscriberExternalIdRequest = (AddSubscriberExternalIdRequest)objectInput;
+					url = new StringBuffer(url.toString().replaceAll(SERVICEINTERNALIDRESETS, addSubscriberExternalIdRequest.getServiceInternalIdResets().toString())
+							.replaceAll(SERVICEINTERNALID, addSubscriberExternalIdRequest.getServiceInternalId().toString()).replaceAll("\\{", "").replaceAll("\\}", ""));
+				}
+			}  
+			
+			postUrl = new HttpPost(url.toString());
+			postUrl.setEntity(new StringEntity(parsingFxObjects.parsingDtoToJSON(objectInput)));
+			postUrl.addHeader("content-type", FXConfiguration.getConfiguration().getString("esb.apicall.contentType"));
+			postUrl.addHeader("tenantId", UserContext.getInstance().getTenantId().toString());
+			postUrl.addHeader("Authorization",conversedOauthResponse.getToken());
+			if (LogUtil.isDebugEnabled(ConversedCommonInterface.class)) {
+				LogUtil.debug(ConversedCommonInterface.class, "url", "postApiCall ESB url: " +  url.toString());
+				LogUtil.debug(ConversedCommonInterface.class, "Json Payload", "postApiCall Json Payload: " +  parsingFxObjects.parsingDtoToJSON(objectInput));
+				LogUtil.debug(ConversedCommonInterface.class, "content-type", "postApiCall content-type: " +  FXConfiguration.getConfiguration().getString("esb.apicall.contentType"));
+				LogUtil.debug(ConversedCommonInterface.class, "tenantId", "postApiCall tenantId: " +  UserContext.getInstance().getTenantId().toString());
+				LogUtil.debug(ConversedCommonInterface.class, "Authorization", "postApiCall Token value: " +  conversedOauthResponse.getToken());
+				
+			}
+			
+			
+			response = httpClient.execute(postUrl);
+			statusCode = response.getStatusLine().getStatusCode();
+
+			if (statusCode < HttpStatus.SC_OK || statusCode >= HttpStatus.SC_MULTIPLE_CHOICES) {
+				HttpEntity entity = response.getEntity();
+				String res = EntityUtils.toString(entity);
+				String errorMsg = null;
+				LogUtil.error(ConversedCommonInterface.class, "ESB call failed", MessageKeyGeneral.INVALID_SERVER_STATUS_CODE +  String.valueOf(statusCode));
+				if (res != null && res.indexOf("message") >= 0) {
+					errorMsg = res.substring(res.indexOf("message") + 10, res.length() - 2);
+					throw new ApiException(new MessageData(MessageKeyGeneral.UNEXPECTED_WITH_STRING, errorMsg));
+				} else {
+					throw new ApiException(new MessageData(MessageKeyGeneral.INVALID_SERVER_STATUS_CODE,
+						new String(String.valueOf(statusCode))));
+				}
+			} else {
+				HttpEntity entity = response.getEntity();
+				String res = EntityUtils.toString(entity);
+				Gson gson = new GsonBuilder().create();
+				if(serviceName.equalsIgnoreCase("ServiceSuspend") || serviceName.equalsIgnoreCase("ServiceResume")) {
+					return null;
+				} else if (serviceName.equalsIgnoreCase("ServiceCreate")) {
+					//String res = EntityUtils.toString(entity);
+					// remove "code":0,"response": and ,"message":"success"
+					res = res.substring(res.indexOf("response") + 10, res.lastIndexOf(","));
+					return gson.fromJson(res, objectInput.getClass());
+				}
+				return gson.fromJson(res, objectInput.getClass());
+
+			}
+
+		} catch (IOException e) {
+			LogUtil.error(ConversedCommonInterface.class, "postApiCall", MessageKeyGeneral.ESB_API_CALL_ERROR +  e.getMessage());
+			throw new ApiException(
+					new MessageData(MessageKeyGeneral.ESB_API_CALL_ERROR, new String(e.getMessage())));
+		} catch (Exception e) {
+			LogUtil.error(ConversedCommonInterface.class, "postApiCall", MessageKeyGeneral.ESB_API_CALL_ERROR +  e.getMessage());
+			throw new ApiException(
+					new MessageData(MessageKeyGeneral.ESB_API_CALL_ERROR, new String(e.getMessage())));
+		}
+
+	}
+
+	// creating the wrapper for the httpClient
+	// This wrapper will be providing the capability for the https to be
+	// connected
+	public static HttpClient wrapHttpClient(HttpClient base) throws ApiException {
+		try {
+			SSLContext ctx = SSLContext.getInstance("TLS");
+
+			X509TrustManager tm = new X509TrustManager() {
+
+				public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException {
+				}
+
+				public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException {
+				}
+
+				public X509Certificate[] getAcceptedIssuers() {
+					return null;
+				}
+			};
+			X509HostnameVerifier verifier = new X509HostnameVerifier() {
+
+				@Override
+				public void verify(String string, SSLSocket ssls) throws IOException {
+				}
+
+				@Override
+				public void verify(String string, X509Certificate xc) throws SSLException {
+				}
+
+				@Override
+				public void verify(String string, String[] strings, String[] strings1) throws SSLException {
+				}
+
+				@Override
+				public boolean verify(String string, SSLSession ssls) {
+					return true;
+				}
+			};
+			ctx.init(null, new TrustManager[] { tm }, null);
+			SSLSocketFactory ssf = new SSLSocketFactory(ctx);
+			ssf.setHostnameVerifier(verifier);
+			ClientConnectionManager ccm = base.getConnectionManager();
+			SchemeRegistry sr = ccm.getSchemeRegistry();
+			sr.register(new Scheme("https", ssf, 443));
+			return new DefaultHttpClient(ccm, base.getParams());
+		} catch (NoSuchAlgorithmException exp) {
+			LogUtil.error(ConversedCommonInterface.class, "wrapHttpClient",
+					MessageKeyGeneral.ESB_API_CALL_ERROR + exp.getMessage());
+			throw new ApiException(new MessageData(MessageKeyGeneral.ESB_API_CALL_ERROR, new String(exp.getMessage())));
+		} catch (Exception ex) {
+			LogUtil.error(ConversedCommonInterface.class, "wrapHttpClient",
+					MessageKeyGeneral.ESB_API_CALL_ERROR + ex.getMessage());
+			throw new ApiException(new MessageData(MessageKeyGeneral.ESB_API_CALL_ERROR, new String(ex.getMessage())));
+		}
+
+	}
+}
